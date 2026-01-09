@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogIn, LogOut, LayoutDashboard, User as UserIcon, Scissors } from 'lucide-react';
 import { useAuth as useAppAuth } from '@/lib/auth';
 import { useAuth } from '@/firebase';
@@ -18,9 +19,11 @@ import {
 export default function Header() {
   const { user } = useAppAuth();
   const auth = useAuth();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     await auth.signOut();
+    router.push('/login');
   };
   
   const getInitials = (name?: string | null) => {

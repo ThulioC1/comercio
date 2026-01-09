@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   SidebarProvider, 
   Sidebar, 
@@ -30,6 +30,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { userProfile } = useAppAuth();
   const auth = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.push('/login');
+  };
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -76,7 +82,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => auth.signOut()} tooltip="Sair">
+                <SidebarMenuButton onClick={handleSignOut} tooltip="Sair">
                   <LogOut/>
                   <span>Sair</span>
                 </SidebarMenuButton>
