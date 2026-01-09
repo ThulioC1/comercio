@@ -22,4 +22,10 @@ if (!getApps().length) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
+// Adicionando localhost aos domínios autorizados para desenvolvimento
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    auth.config.emulator.host = 'localhost';
+}
+
+
 export { app, auth, db };
