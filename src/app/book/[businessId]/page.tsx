@@ -1,46 +1,89 @@
 
-import { doc, collection, query, getDoc, getDocs } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase/server'; // Using server initialization
+'use client';
+
+import { useMemo } from 'react';
+import { useParams, notFound, useRouter } from 'next/navigation';
+import { doc, collection, query } from 'firebase/firestore';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
 import type { Business, Service } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, DollarSign, CalendarPlus, Building, MapPin, Info } from 'lucide-react';
+import { Clock, DollarSign, CalendarPlus, MapPin, Info } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemoFirebase } from '@/firebase/provider';
 
-async function getBusinessData(businessId: string) {
-    const { firestore } = initializeFirebase();
-    const businessRef = doc(firestore, "businesses", businessId);
-    
-    const businessSnap = await getDoc(businessRef);
 
-    if (!businessSnap.exists()) {
-        return null;
-    }
-
-    const servicesQuery = query(collection(firestore, `businesses/${businessId}/services`));
-    const servicesSnap = await getDocs(servicesQuery);
-    
-    const business = { id: businessSnap.id, ...businessSnap.data() } as Business;
-    const services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
-
-    return { business, services };
+function BusinessPublicPageSkeleton() {
+    return (
+        <div className="flex flex-col min-h-screen bg-accent/20">
+            <Header />
+            <main className="flex-1 container py-10">
+                 <div className="flex flex-col items-center text-center">
+                    <Skeleton className="w-24 h-24 rounded-full" />
+                    <Skeleton className="h-10 w-64 mt-4" />
+                    <Skeleton className="h-6 w-40 mt-2" />
+                    <Skeleton className="h-5 w-72 mt-2" />
+                    <Skeleton className="h-12 w-96 mt-4" />
+                </div>
+                <div className="mt-12">
+                    <Skeleton className="h-8 w-56 mx-auto mb-6" />
+                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({length: 3}).map((_, i) => (
+                             <Card key={i}>
+                                <CardHeader>
+                                    <Skeleton className="h-6 w-40" />
+                                    <Skeleton className="h-4 w-full mt-2" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="h-5 w-20" />
+                                        <Skeleton className="h-5 w-20" />
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Skeleton className="h-10 w-full" />
+                                </CardFooter>
+                            </Card>
+                        ))}
+                     </div>
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
 }
 
 
-export default async function BusinessPublicPage({ params }: { params: { businessId: string } }) {
-    const businessId = params.businessId;
-    const data = await getBusinessData(businessId);
+export default function BusinessPublicPage() {
+    const params = useParams();
+    const businessId = params.businessId as string;
+    const firestore = useFirestore();
 
-    if (!data) {
+    const businessRef = useMemoFirebase(() => {
+        if (!firestore || !businessId) return null;
+        return doc(firestore, "businesses", businessId);
+    }, [firestore, businessId]);
+
+    const servicesQuery = useMemoFirebase(() => {
+        if (!firestore || !businessId) return null;
+        return query(collection(firestore, `businesses/${businessId}/services`));
+    }, [firestore, businessId]);
+
+    const { data: business, isLoading: isLoadingBusiness, error: businessError } = useDoc<Business>(businessRef);
+    const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesQuery);
+
+    if (isLoadingBusiness || isLoadingServices) {
+        return <BusinessPublicPageSkeleton />;
+    }
+
+    if (!business || businessError) {
         notFound();
     }
     
-    const { business, services } = data;
-
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
     }
@@ -53,7 +96,6 @@ export default async function BusinessPublicPage({ params }: { params: { busines
         }
         return name.substring(0, 2).toUpperCase();
     };
-
 
     return (
         <div className="flex flex-col min-h-screen bg-accent/20">
