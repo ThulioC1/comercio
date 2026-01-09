@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -61,7 +62,6 @@ export default function AuthForm() {
         toast({ title: "Login bem-sucedido!", description: "Redirecionando para o seu painel." });
         router.push('/dashboard');
     } catch (error: any) {
-        console.error(error);
         toast({ variant: 'destructive', title: 'Erro de Login', description: 'Email ou senha incorretos.' });
     } finally {
         setIsLoading(false);
@@ -98,7 +98,6 @@ export default function AuthForm() {
       toast({ title: 'Login com Google bem-sucedido!' });
       router.push('/dashboard');
     } catch (error) {
-      console.error(error);
       toast({ variant: 'destructive', title: 'Erro com Google', description: 'Não foi possível fazer login com o Google.' });
     } finally {
       setIsLoading(false);

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -79,7 +80,6 @@ export default function RegisterForm() {
         toast({ title: 'Conta criada com sucesso!', description: 'Você já pode usar o AgendaPlus.' });
         router.push('/dashboard');
     } catch (error) {
-        console.error(error);
         toast({ variant: 'destructive', title: 'Erro ao criar conta', description: 'Este email pode já estar em uso.' });
     } finally {
         setIsLoading(false);
@@ -114,7 +114,6 @@ export default function RegisterForm() {
       toast({ title: 'Login com Google bem-sucedido!' });
       router.push('/dashboard');
     } catch (error) {
-      console.error(error);
       toast({ variant: 'destructive', title: 'Erro com Google', description: 'Não foi possível fazer login com o Google.' });
     } finally {
       setIsLoading(false);
