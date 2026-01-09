@@ -11,6 +11,14 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function isSystemAdmin() {
+      return isSignedIn() && request.auth.token.email == 'thuliocosta8@gmail.com';
+    }
+
+    function isBusinessOwner(businessId) {
+      return isSignedIn() && get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
+    }
 
     // Rules for the 'users' collection
     match /users/{userId} {
@@ -18,8 +26,28 @@ service cloud.firestore {
       allow read, update: if isOwner(userId);
       
       // Allow a new user to create their own profile document.
-      // The `uid` in the document must match their auth `uid`.
-      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn();
+    }
+    
+    // Rules for 'businesses' and its subcollections
+    match /businesses/{businessId} {
+      allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+
+      match /services/{serviceId} {
+        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+      }
+
+      match /schedules/{scheduleId} {
+        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+      }
+
+      match /appointments/{appointmentId} {
+        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+      }
+      
+      match /settings/{settingId} {
+        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+      }
     }
 
     // Fallback rule: Deny all other reads and writes by default
