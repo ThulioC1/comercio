@@ -1,3 +1,4 @@
+
 "use client"
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -33,6 +34,10 @@ const adminMenuItems = [
   { href: '/dashboard/admin/settings', label: 'Config. Sistema', icon: Shield },
 ];
 
+const clientMenuItems = [
+    { href: '/dashboard', label: 'Estabelecimentos', icon: Building },
+];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { userProfile } = useAppAuth();
   const auth = useAuth();
@@ -66,8 +71,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
   
-  const menuItems = userProfile?.role === 'system-admin' ? adminMenuItems : businessOwnerMenuItems;
-  const pageTitle = menuItems.find(item => pathname.startsWith(item.href) && (item.href.length > 1 ? pathname !== '/dashboard' : true))?.label || 'Dashboard';
+  let menuItems;
+  let pageTitle = 'Dashboard';
+
+  if (userProfile?.role === 'system-admin') {
+    menuItems = adminMenuItems;
+    pageTitle = adminMenuItems.find(item => pathname.startsWith(item.href) && (item.href.length > 1 ? pathname !== '/dashboard' : true))?.label || 'Início';
+  } else if (userProfile?.role === 'client') {
+    menuItems = clientMenuItems;
+    pageTitle = 'Estabelecimentos';
+  } else {
+    menuItems = businessOwnerMenuItems;
+     pageTitle = businessOwnerMenuItems.find(item => pathname.startsWith(item.href) && (item.href.length > 1 ? pathname !== '/dashboard' : true))?.label || 'Início';
+  }
 
 
   return (

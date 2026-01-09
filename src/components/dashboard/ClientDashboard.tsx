@@ -11,6 +11,8 @@ import type { Business } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemoFirebase } from "@/firebase/provider";
 import Image from 'next/image';
+import { WithId } from "@/firebase/firestore/use-collection";
+
 
 export default function ClientDashboard() {
     const firestore = useFirestore();
@@ -43,7 +45,7 @@ export default function ClientDashboard() {
                         </CardContent>
                     </Card>
                 ))}
-                {!isLoading && businesses?.map((business) => (
+                {!isLoading && businesses?.map((business: WithId<Business>) => (
                      <Link href={`/book/${business.id}`} key={business.id}>
                         <Card className="overflow-hidden h-full flex flex-col transform hover:-translate-y-2 transition-transform duration-300">
                             <div className="relative w-full h-40">
