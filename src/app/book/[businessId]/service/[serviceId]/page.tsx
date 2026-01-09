@@ -1,105 +1,58 @@
 
-'use client';
-
-import { useMemo } from 'react';
-import { useParams, notFound } from 'next/navigation';
-import { doc, collection, query } from 'firebase/firestore';
-import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { doc, collection, query, getDocs } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase/server';
+import { notFound } from 'next/navigation';
 import type { Business, Service, Schedule } from '@/lib/types';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BookingClient from './BookingClient';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useMemoFirebase } from '@/firebase/provider';
+import { WithId } from '@/firebase/firestore/use-collection';
 
+interface PageProps {
+    params: {
+        businessId: string;
+        serviceId: string;
+    }
+}
 
-function BookingPageSkeleton() {
-    return (
-         <div className="flex flex-col min-h-screen bg-accent/20">
-            <Header />
-            <main className="flex-1 container py-10">
-                <Skeleton className="h-9 w-24 mb-6" />
-                <div className="grid md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <Skeleton className="h-7 w-80" />
-                                <Skeleton className="h-4 w-96 mt-2" />
-                            </CardHeader>
-                            <CardContent className="flex flex-col md:flex-row gap-8">
-                                <Skeleton className="h-[250px] w-full md:w-[280px] rounded-md" />
-                                <div className="flex-1">
-                                    <Skeleton className="h-7 w-56 mb-4" />
-                                    <div className="grid grid-cols-3 lg:grid-cols-4 gap-2">
-                                        {Array.from({length: 8}).map((_, i) => <Skeleton key={i} className="h-10"/>)}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="md:col-span-1">
-                        <Card>
-                            <CardHeader><Skeleton className="h-7 w-48" /></CardHeader>
-                            <CardContent className="space-y-4">
-                                <div>
-                                    <Skeleton className="h-5 w-16 mb-1" />
-                                    <Skeleton className="h-4 w-32" />
-                                </div>
-                                <div className="flex justify-between">
-                                    <Skeleton className="h-5 w-20" />
-                                    <Skeleton className="h-5 w-12" />
-                                </div>
-                                <div className="flex justify-between">
-                                    <Skeleton className="h-5 w-16" />
-                                    <Skeleton className="h-5 w-24" />
-                                </div>
-                            </CardContent>
-                            <div className="p-6 pt-0">
-                               <Skeleton className="h-10 w-full" />
-                            </div>
-                        </Card>
-                    </div>
-                </div>
-            </main>
-            <Footer />
-        </div>
-    )
+async function getBookingPageData(businessId: string, serviceId: string): Promise<{ business: WithId<Business>, service: WithId<Service>, schedule: WithId<Schedule>[] } | null> {
+    try {
+        const { firestore } = initializeFirebase();
+        const { getDoc } = await import('firebase/firestore');
+
+        // Fetch business
+        const businessRef = doc(firestore, "businesses", businessId);
+        const businessSnap = await getDoc(businessRef);
+        if (!businessSnap.exists()) return null;
+        const business = { id: businessSnap.id, ...businessSnap.data() } as WithId<Business>;
+        
+        // Fetch service
+        const serviceRef = doc(firestore, `businesses/${businessId}/services`, serviceId);
+        const serviceSnap = await getDoc(serviceRef);
+        if (!serviceSnap.exists()) return null;
+        const service = { id: serviceSnap.id, ...serviceSnap.data() } as WithId<Service>;
+
+        // Fetch schedule
+        const scheduleQuery = query(collection(firestore, `businesses/${businessId}/schedules`));
+        const scheduleSnap = await getDocs(scheduleQuery);
+        const schedule = scheduleSnap.docs.map(d => ({ id: d.id, ...d.data() } as WithId<Schedule>));
+
+        return { business, service, schedule };
+    } catch (error) {
+        console.error("Failed to fetch booking page data on server:", error);
+        return null;
+    }
 }
 
 
-export default function BookServicePage() {
-    const params = useParams();
-    const { businessId, serviceId } = params;
-    const firestore = useFirestore();
+export default async function BookServicePage({ params }: PageProps) {
+    const data = await getBookingPageData(params.businessId, params.serviceId);
 
-    const businessRef = useMemoFirebase(() => {
-        if (!firestore || !businessId) return null;
-        return doc(firestore, "businesses", businessId as string)
-    }, [firestore, businessId]);
-
-    const serviceRef = useMemoFirebase(() => {
-        if (!firestore || !businessId || !serviceId) return null;
-        return doc(firestore, `businesses/${businessId}/services`, serviceId as string)
-    }, [firestore, businessId, serviceId]);
-    
-    const scheduleQuery = useMemoFirebase(() => {
-        if (!firestore || !businessId) return null;
-        return collection(firestore, `businesses/${businessId}/schedules`)
-    }, [firestore, businessId]);
-
-    const { data: business, isLoading: isLoadingBusiness, error: businessError } = useDoc<Business>(businessRef);
-    const { data: service, isLoading: isLoadingService, error: serviceError } = useDoc<Service>(serviceRef);
-    const { data: schedule, isLoading: isLoadingSchedule, error: scheduleError } = useCollection<Schedule>(scheduleQuery);
-    
-    const isLoading = isLoadingBusiness || isLoadingService || isLoadingSchedule;
-    
-    if (!isLoading && (!business || businessError || !service || serviceError || scheduleError)) {
+    if (!data) {
         notFound();
     }
-
-    if (isLoading) {
-        return <BookingPageSkeleton />;
-    }
+    
+    const { business, service, schedule } = data;
 
     return (
         <div className="flex flex-col min-h-screen bg-accent/20">
@@ -111,4 +64,3 @@ export default function BookServicePage() {
         </div>
     );
 }
-
