@@ -14,15 +14,16 @@ import Link from 'next/link';
 async function getBusinessData(businessId: string) {
     const { firestore } = initializeFirebase();
     const businessRef = doc(firestore, "businesses", businessId);
-    const servicesQuery = query(collection(firestore, `businesses/${businessId}/services`));
-
+    
     const businessSnap = await getDoc(businessRef);
 
     if (!businessSnap.exists()) {
         return null;
     }
 
+    const servicesQuery = query(collection(firestore, `businesses/${businessId}/services`));
     const servicesSnap = await getDocs(servicesQuery);
+    
     const business = { id: businessSnap.id, ...businessSnap.data() } as Business;
     const services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
 

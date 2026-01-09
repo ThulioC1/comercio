@@ -8,20 +8,13 @@ import { getAuth } from 'firebase/auth';
 
 export function initializeFirebase() {
   if (!getApps().length) {
-    let firebaseApp;
-    try {
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
-    return getSdks(firebaseApp);
+    // In server components, especially in non-Firebase hosting environments (like Vercel),
+    // we must explicitly provide the configuration.
+    initializeApp(firebaseConfig);
   }
-
-  return getSdks(getApp());
+  // If already initialized, just get the existing app instance.
+  const app = getApp();
+  return getSdks(app);
 }
 
 function getSdks(firebaseApp: FirebaseApp) {

@@ -12,17 +12,18 @@ async function getBookingData(businessId: string, serviceId: string) {
     try {
         const businessRef = doc(firestore, "businesses", businessId);
         const serviceRef = doc(firestore, `businesses/${businessId}/services`, serviceId);
-        const scheduleQuery = query(collection(firestore, `businesses/${businessId}/schedules`));
-
-        const [businessSnap, serviceSnap, scheduleSnap] = await Promise.all([
+        
+        const [businessSnap, serviceSnap] = await Promise.all([
             getDoc(businessRef),
             getDoc(serviceRef),
-            getDocs(scheduleQuery)
         ]);
 
         if (!businessSnap.exists() || !serviceSnap.exists()) {
             return null;
         }
+
+        const scheduleQuery = query(collection(firestore, `businesses/${businessId}/schedules`));
+        const scheduleSnap = await getDocs(scheduleQuery);
 
         const business = { id: businessSnap.id, ...businessSnap.data() } as Business;
         const service = { id: serviceSnap.id, ...serviceSnap.data() } as Service;
@@ -31,6 +32,7 @@ async function getBookingData(businessId: string, serviceId: string) {
         return { business, service, schedule };
     } catch (error) {
         console.error("Failed to fetch booking data on server:", error);
+        // Returning null will trigger notFound() in the component
         return null;
     }
 }
