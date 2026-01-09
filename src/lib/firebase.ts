@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
+import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -22,9 +22,9 @@ if (!getApps().length) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
-// Adicionando localhost aos domínios autorizados para desenvolvimento
+// Conectando ao emulador de autenticação em ambiente de desenvolvimento
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    auth.config.emulator.host = 'localhost';
+    connectAuthEmulator(auth, "http://localhost:9099");
 }
 
 
