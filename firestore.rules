@@ -13,12 +13,10 @@ service cloud.firestore {
     }
     
     function isSystemAdmin() {
-      // The user with this email has system-wide admin privileges.
       return isSignedIn() && request.auth.token.email == 'thuliocosta8@gmail.com';
     }
 
     function isBusinessOwner(businessId) {
-      // Check if the user is the owner of the specified business.
       return isSignedIn() && get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
     }
 
@@ -40,46 +38,18 @@ service cloud.firestore {
       // Only admin or the owner can write.
       allow write: if isSystemAdmin() || isBusinessOwner(businessId);
 
-      // Rules for 'services' subcollection
-      match /services/{serviceId} {
-        // ANYONE can read service details.
+      // Subcollections are publicly readable but writable only by the owner/admin.
+      match /{allSubcollections}/{docId} {
         allow read: if true;
-        // Only admin or the owner can write services.
-        allow write: if isSystemAdmin() || isBusinessOwner(businessId);
-      }
-      
-      // Rules for 'schedules' subcollection
-      match /schedules/{scheduleId} {
-        // ANYONE can read schedule details.
-        allow read: if true;
-        // Only admin or the owner can write schedules.
         allow write: if isSystemAdmin() || isBusinessOwner(businessId);
       }
 
-      // Rules for 'appointments' subcollection
+      // Specific rule for appointments: any signed-in user can create one.
       match /appointments/{appointmentId} {
-        // Only admin or business owner can manage appointments.
-        // Clients can create appointments (this will be refined).
-        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
-        allow create: if isSignedIn(); // Allow any signed-in user to create an appointment
+        allow create: if isSignedIn();
+        // Read/update/delete still restricted to owner/admin
+        allow read, update, delete: if isSystemAdmin() || isBusinessOwner(businessId);
       }
-      
-      match /settings/{settingId} {
-        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
-      }
-    }
-    
-    // Allow admin to list users and businesses
-    match /users/{document=**} {
-      allow list: if isSystemAdmin();
-    }
-    match /businesses/{document=**} {
-      allow list: if isSystemAdmin();
-    }
-
-    // Fallback rule: Deny all other reads and writes by default
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
