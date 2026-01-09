@@ -42,6 +42,11 @@ service cloud.firestore {
       match /services/{serviceId} {
         allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
       }
+      
+      // Allow admin or business owner to list services for a business
+      match /services/{document=**} {
+        allow list: if isSystemAdmin() || isBusinessOwner(businessId);
+      }
 
       match /schedules/{scheduleId} {
         allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
