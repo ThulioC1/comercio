@@ -16,15 +16,21 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth as useAppAuth } from "@/lib/auth";
 import { useAuth } from "@/firebase";
-import { Home, Settings, Calendar, Users, LogOut, Scissors, Shield } from 'lucide-react';
+import { Home, Settings, Calendar, Users, LogOut, Scissors, Shield, Building } from 'lucide-react';
 import type { UserRole } from '@/lib/types';
 
-const menuItems = [
+const businessOwnerMenuItems = [
   { href: '/dashboard', label: 'Início', icon: Home },
   { href: '/dashboard/schedule', label: 'Agenda', icon: Calendar },
   { href: '/dashboard/services', label: 'Serviços', icon: Scissors },
   { href: '/dashboard/clients', label: 'Clientes', icon: Users },
   { href: '/dashboard/settings', label: 'Configurações', icon: Settings },
+];
+
+const adminMenuItems = [
+  { href: '/dashboard', label: 'Início', icon: Home },
+  { href: '/dashboard/admin', label: 'Gerenciar Negócios', icon: Building },
+  { href: '/dashboard/admin/settings', label: 'Config. Sistema', icon: Shield },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -59,6 +65,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return 'Usuário';
     }
   }
+  
+  const menuItems = userProfile?.role === 'system-admin' ? adminMenuItems : businessOwnerMenuItems;
+  const pageTitle = menuItems.find(item => item.href === pathname)?.label || 'Dashboard';
+
 
   return (
     <SidebarProvider>
@@ -108,7 +118,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
            <SidebarTrigger className="md:hidden" />
            <div className="w-full flex-1">
-             <h1 className="font-headline text-lg font-semibold md:text-2xl">Dashboard</h1>
+             <h1 className="font-headline text-lg font-semibold md:text-2xl">{pageTitle}</h1>
            </div>
         </header>
         <main className="flex-1 p-4 md:p-6">

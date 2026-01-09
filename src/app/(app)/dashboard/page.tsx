@@ -1,7 +1,12 @@
+"use client";
+
+import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Users, Calendar, Clock } from "lucide-react";
+import { DollarSign, Users, Calendar, Clock, Building } from "lucide-react";
 import AppointmentsChart from "@/components/dashboard/AppointmentsChart";
 import RecentAppointments from "@/components/dashboard/RecentAppointments";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const stats = [
     { title: "Faturamento (mês)", value: "R$ 4,231.89", icon: DollarSign, change: "+20.1% from last month" },
@@ -10,7 +15,7 @@ const stats = [
     { title: "Taxa de Ocupação", value: "72%", icon: Clock, change: "+4% from last month" },
 ];
 
-export default function DashboardPage() {
+function BusinessOwnerDashboard() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -50,4 +55,42 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+
+function AdminDashboard() {
+    const { userProfile } = useAuth();
+    return (
+        <div className="flex items-center justify-center h-full">
+            <Card className="w-full max-w-lg text-center">
+                <CardHeader>
+                    <CardTitle className="font-headline text-3xl">Bem-vindo, Administrador!</CardTitle>
+                    <CardDescription>
+                        Use o menu lateral para gerenciar os negócios e as configurações do sistema.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                     <p className="text-lg">Você está logado como <span className="font-semibold">{userProfile?.displayName}</span>.</p>
+                     <Link href="/dashboard/admin">
+                        <Button>
+                            <Building className="mr-2" />
+                            Gerenciar Negócios
+                        </Button>
+                     </Link>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+
+export default function DashboardPage() {
+  const { userProfile } = useAuth();
+
+  if (userProfile?.role === 'system-admin') {
+    return <AdminDashboard />;
+  }
+
+  // Default to business owner dashboard
+  return <BusinessOwnerDashboard />;
 }
