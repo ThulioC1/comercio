@@ -13,17 +13,20 @@ service cloud.firestore {
     }
     
     function isSystemAdmin() {
+      // The user with this email has system-wide admin privileges.
       return isSignedIn() && request.auth.token.email == 'thuliocosta8@gmail.com';
     }
 
     function isBusinessOwner(businessId) {
+      // Check if the user is the owner of the specified business.
       return isSignedIn() && get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerId == request.auth.uid;
     }
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // Allow a user to read and update their own profile
-      allow read, update: if isOwner(userId);
+      // System admin can read/write any user profile.
+      // A user can read and update their own profile.
+      allow read, update: if isSystemAdmin() || isOwner(userId);
       
       // Allow a new user to create their own profile document.
       allow create: if isSignedIn();
@@ -31,7 +34,10 @@ service cloud.firestore {
     
     // Rules for 'businesses' and its subcollections
     match /businesses/{businessId} {
+      // Allow system admin or the business owner to read and write.
       allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+      // Admin can create new businesses.
+      allow create: if isSystemAdmin();
 
       match /services/{serviceId} {
         allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
@@ -48,6 +54,14 @@ service cloud.firestore {
       match /settings/{settingId} {
         allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
       }
+    }
+    
+    // Allow admin to list users and businesses
+    match /users/{document=**} {
+      allow list: if isSystemAdmin();
+    }
+    match /businesses/{document=**} {
+      allow list: if isSystemAdmin();
     }
 
     // Fallback rule: Deny all other reads and writes by default
