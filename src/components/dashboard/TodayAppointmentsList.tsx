@@ -17,18 +17,19 @@ export default function TodayAppointmentsList() {
     const { userProfile } = useAuth();
     const businessId = userProfile?.businessIds?.[0];
 
-    const today = new Date();
-    const startOfToday = new Timestamp(Math.floor(new Date(today.setHours(0, 0, 0, 0)).getTime() / 1000), 0);
-    const endOfToday = new Timestamp(Math.floor(new Date(today.setHours(23, 59, 59, 999)).getTime() / 1000), 0);
-
     const appointmentsQuery = useMemoFirebase(() => {
         if (!firestore || !businessId) return null;
+
+        const today = new Date();
+        const startOfToday = new Timestamp(Math.floor(new Date(today.setHours(0, 0, 0, 0)).getTime() / 1000), 0);
+        const endOfToday = new Timestamp(Math.floor(new Date(today.setHours(23, 59, 59, 999)).getTime() / 1000), 0);
+
         return query(
             collection(firestore, `businesses/${businessId}/appointments`),
             where('startTime', '>=', startOfToday),
             where('startTime', '<=', endOfToday)
         );
-    }, [firestore, businessId, startOfToday, endOfToday]);
+    }, [firestore, businessId]);
 
     const servicesQuery = useMemoFirebase(() => {
         if (!firestore || !businessId) return null;
