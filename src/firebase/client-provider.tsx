@@ -2,7 +2,7 @@
 
 import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
@@ -13,14 +13,12 @@ interface FirebaseClientProviderProps {
 
 // This is the primary client-side initialization function.
 function initializeClientApp() {
+    // If there are no apps, initialize one.
     if (getApps().length === 0) {
-        // This is the fallback for client-side rendering outside of Firebase Hosting.
         return initializeApp(firebaseConfig);
     }
-    // If apps are already initialized, it might be due to Server Components.
-    // In a pure client-side scenario, this part is less likely to be hit on first load.
-    // However, it's safe to get the default app.
-    return getApps()[0];
+    // Otherwise, return the already-initialized app.
+    return getApp();
 }
 
 
