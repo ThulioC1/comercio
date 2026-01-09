@@ -34,26 +34,34 @@ service cloud.firestore {
     
     // Rules for 'businesses' and its subcollections
     match /businesses/{businessId} {
-      // Allow system admin or the business owner to read and write.
-      allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
-      // Admin can create new businesses.
-      allow create: if isSystemAdmin();
+      // ANYONE can read business details for the public booking page.
+      allow read: if true;
+      
+      // Only admin or the owner can write.
+      allow write: if isSystemAdmin() || isBusinessOwner(businessId);
 
+      // Rules for 'services' subcollection
       match /services/{serviceId} {
-        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+        // ANYONE can read service details.
+        allow read: if true;
+        // Only admin or the owner can write services.
+        allow write: if isSystemAdmin() || isBusinessOwner(businessId);
       }
       
-      // Allow admin or business owner to list services for a business
-      match /services/{document=**} {
-        allow list: if isSystemAdmin() || isBusinessOwner(businessId);
-      }
-
+      // Rules for 'schedules' subcollection
       match /schedules/{scheduleId} {
-        allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+        // ANYONE can read schedule details.
+        allow read: if true;
+        // Only admin or the owner can write schedules.
+        allow write: if isSystemAdmin() || isBusinessOwner(businessId);
       }
 
+      // Rules for 'appointments' subcollection
       match /appointments/{appointmentId} {
+        // Only admin or business owner can manage appointments.
+        // Clients can create appointments (this will be refined).
         allow read, write: if isSystemAdmin() || isBusinessOwner(businessId);
+        allow create: if isSignedIn(); // Allow any signed-in user to create an appointment
       }
       
       match /settings/{settingId} {
