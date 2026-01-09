@@ -1,3 +1,28 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "barbershop-classic",
+      "description": "Barbearia Clássica",
+      "imageUrl": "https://images.unsplash.com/photo-1592647420148-bfcc177e2117?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxiYXJiZXJzaG9wfGVufDB8fHx8MTc2Nzk1Njg0MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "barbershop"
+    },
+    {
+      "id": "nail-art-studio",
+      "description": "Estúdio de Nail Art",
+      "imageUrl": "https://images.unsplash.com/photo-1690749138086-7422f71dc159?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxuYWlsJTIwc2Fsb258ZW58MHx8fHwxNzY3OTU2ODQxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "nail salon"
+    },
+    {
+      "id": "beauty-lounge",
+      "description": "Beauty Lounge",
+      "imageUrl": "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxiZWF1dHklMjBzYWxvbnxlbnwwfHx8fDE3Njc5NTY4NDF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beauty salon"
+    },
+    {
+      "id": "hero-image",
+      "description": "Mulher sorrindo em um salão de beleza",
+      "imageUrl": "https://images.unsplash.com/photo-1633681138600-295fcd688876?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzYWxvbiUyMGludGVyaW9yfGVufDB8fHx8MTc2NzkwODczNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "salon interior"
+    }
+  ]
 }
