@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { useAuth } from '@/lib/auth';
-import { collection, query, getDocs, doc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +13,7 @@ import { Users } from 'lucide-react';
 import type { Appointment, UserProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useMemoFirebase } from '@/firebase/provider';
 
 interface ClientData extends UserProfile {
   lastAppointment: Date | null;
@@ -26,6 +27,11 @@ export default function ClientsPage() {
   const { userProfile } = useAuth();
   const businessId = userProfile?.businessIds?.[0];
 
+  const appointmentsQuery = useMemoFirebase(() => {
+    if (!firestore || !businessId) return null;
+    return query(collection(firestore, `businesses/${businessId}/appointments`));
+  }, [firestore, businessId]);
+
   useEffect(() => {
     async function fetchClients() {
       if (!firestore || !businessId) {
@@ -37,8 +43,7 @@ export default function ClientsPage() {
 
       try {
         // 1. Fetch all appointments for the business
-        const appointmentsQuery = query(collection(firestore, `businesses/${businessId}/appointments`));
-        const appointmentsSnapshot = await getDocs(appointmentsQuery);
+        const appointmentsSnapshot = await getDocs(appointmentsQuery!);
         const appointments = appointmentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
 
         if (appointments.length === 0) {
@@ -64,7 +69,6 @@ export default function ClientsPage() {
 
         // 3. Fetch client profiles
         const clientIds = Object.keys(clientAggregates);
-        const clientPromises = clientIds.map(id => getDocs(query(collection(firestore, 'users'), doc(firestore, 'users', id))));
         
         const clientDocsSnapshots = await Promise.all(clientIds.map(id => getDoc(doc(firestore, 'users', id))));
 
@@ -93,8 +97,10 @@ export default function ClientsPage() {
       }
     }
 
-    fetchClients();
-  }, [firestore, businessId]);
+    if (appointmentsQuery) {
+        fetchClients();
+    }
+  }, [firestore, businessId, appointmentsQuery]);
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
