@@ -15,6 +15,17 @@ interface PageProps {
     }
 }
 
+const weekDayIndexMap: { [key: string]: number } = {
+    'sunday': 0,
+    'monday': 1,
+    'tuesday': 2,
+    'wednesday': 3,
+    'thursday': 4,
+    'friday': 5,
+    'saturday': 6,
+};
+
+
 async function getBookingPageData(businessId: string, serviceId: string): Promise<{ business: WithId<Business>, service: WithId<Service>, schedule: WithId<Schedule>[] } | null> {
     try {
         const { firestore } = initializeFirebase();
@@ -35,7 +46,14 @@ async function getBookingPageData(businessId: string, serviceId: string): Promis
         // Fetch schedule
         const scheduleQuery = query(collection(firestore, `businesses/${businessId}/schedules`));
         const scheduleSnap = await getDocs(scheduleQuery);
-        const schedule = scheduleSnap.docs.map(d => ({ id: d.id, ...d.data() } as WithId<Schedule>));
+        const schedule = scheduleSnap.docs.map(d => {
+            const data = d.data();
+            return {
+                id: d.id,
+                ...data,
+                dayIndex: weekDayIndexMap[d.id], // Add the day index here
+            } as WithId<Schedule>
+        });
 
         return { business, service, schedule };
     } catch (error) {
