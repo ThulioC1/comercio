@@ -53,11 +53,11 @@ export interface StaffMember {
 
 export interface Schedule {
   id: string; // e.g., 'monday', 'tuesday'
-  businessId: string;
+  dayName?: string; // Optional: Only for client-side use
+  dayIndex?: number; // Optional: Only for client-side use
   isOpen: boolean;
   openTime: string; // e.g., '09:00'
-  closeTime: string; // eG., '18:00'
-  breakTimes?: { start: string; end: string }[];
+  closeTime: string; // e.g., '18:00'
 }
 
 export interface Appointment {
