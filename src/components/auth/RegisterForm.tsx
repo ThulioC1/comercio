@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth';
@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -40,7 +41,7 @@ const GoogleIcon = () => (
     </svg>
 );
 
-export default function AuthForm() {
+export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -50,19 +51,28 @@ export default function AuthForm() {
     defaultValues: { email: '', password: '' },
   });
 
-  const handleAuth = async (values: z.infer<typeof formSchema>) => {
+  const handleSignUp = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-        await signInWithEmailAndPassword(auth, values.email, values.password);
-        toast({ title: "Login bem-sucedido!", description: "Redirecionando para o seu painel." });
+        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+        const user = userCredential.user;
+        const userProfile: UserProfile = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.email?.split('@')[0] || 'Novo Usuário',
+            photoURL: user.photoURL,
+            role: 'client', // Default role
+        };
+        await setDoc(doc(db, "users", user.uid), userProfile);
+        toast({ title: 'Conta criada com sucesso!', description: 'Você já pode usar o AgendaPlus.' });
         router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
         console.error(error);
-        toast({ variant: 'destructive', title: 'Erro de Login', description: 'Email ou senha incorretos.' });
+        toast({ variant: 'destructive', title: 'Erro ao criar conta', description: 'Este email pode já estar em uso.' });
     } finally {
         setIsLoading(false);
     }
-  };
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -95,7 +105,7 @@ export default function AuthForm() {
   return (
     <div className="grid gap-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleAuth)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(handleSignUp)} className="space-y-4">
           <FormField
             control={form.control}
             name="email"
@@ -124,7 +134,7 @@ export default function AuthForm() {
           />
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Continuar com Email
+            Criar conta
           </Button>
         </form>
       </Form>
@@ -142,6 +152,16 @@ export default function AuthForm() {
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon />}
         Google
       </Button>
+      <p className="px-8 text-center text-sm text-muted-foreground">
+        Já tem uma conta?{' '}
+        <Link
+          href="/login"
+          className="underline underline-offset-4 hover:text-primary"
+        >
+          Faça login
+        </Link>
+        .
+      </p>
     </div>
   );
 }
