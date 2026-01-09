@@ -18,6 +18,8 @@ export interface Business {
   logoUrl?: string;
   address: string;
   phone: string;
+  businessType: string;
+  timeZone: string;
   socialMedia?: {
     instagram?: string;
     facebook?: string;
