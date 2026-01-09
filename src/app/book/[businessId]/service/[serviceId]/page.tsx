@@ -2,8 +2,8 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
-import { doc, getDoc, collection, query, getDocs } from 'firebase/firestore';
+import { useParams, notFound } from 'next/navigation';
+import { doc, collection, query } from 'firebase/firestore';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import type { Business, Service, Schedule } from '@/lib/types';
 import Header from '@/components/layout/Header';
@@ -72,22 +72,33 @@ export default function BookServicePage() {
     const { businessId, serviceId } = params;
     const firestore = useFirestore();
 
-    const businessRef = useMemoFirebase(() => doc(firestore, "businesses", businessId as string), [firestore, businessId]);
-    const serviceRef = useMemoFirebase(() => doc(firestore, `businesses/${businessId}/services`, serviceId as string), [firestore, businessId, serviceId]);
-    const scheduleQuery = useMemoFirebase(() => collection(firestore, `businesses/${businessId}/schedules`), [firestore, businessId]);
+    const businessRef = useMemoFirebase(() => {
+        if (!firestore || !businessId) return null;
+        return doc(firestore, "businesses", businessId as string)
+    }, [firestore, businessId]);
+
+    const serviceRef = useMemoFirebase(() => {
+        if (!firestore || !businessId || !serviceId) return null;
+        return doc(firestore, `businesses/${businessId}/services`, serviceId as string)
+    }, [firestore, businessId, serviceId]);
+    
+    const scheduleQuery = useMemoFirebase(() => {
+        if (!firestore || !businessId) return null;
+        return collection(firestore, `businesses/${businessId}/schedules`)
+    }, [firestore, businessId]);
 
     const { data: business, isLoading: isLoadingBusiness, error: businessError } = useDoc<Business>(businessRef);
     const { data: service, isLoading: isLoadingService, error: serviceError } = useDoc<Service>(serviceRef);
     const { data: schedule, isLoading: isLoadingSchedule, error: scheduleError } = useCollection<Schedule>(scheduleQuery);
     
     const isLoading = isLoadingBusiness || isLoadingService || isLoadingSchedule;
+    
+    if (!isLoading && (!business || businessError || !service || serviceError || scheduleError)) {
+        notFound();
+    }
 
     if (isLoading) {
         return <BookingPageSkeleton />;
-    }
-
-    if (!business || !service || businessError || serviceError || scheduleError) {
-        notFound();
     }
 
     return (
@@ -100,3 +111,4 @@ export default function BookServicePage() {
         </div>
     );
 }
+

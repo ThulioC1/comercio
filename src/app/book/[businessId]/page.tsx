@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useParams, notFound, useRouter } from 'next/navigation';
+import { useParams, notFound } from 'next/navigation';
 import { doc, collection, query } from 'firebase/firestore';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import type { Business, Service } from '@/lib/types';
@@ -76,12 +76,14 @@ export default function BusinessPublicPage() {
     const { data: business, isLoading: isLoadingBusiness, error: businessError } = useDoc<Business>(businessRef);
     const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesQuery);
 
-    if (isLoadingBusiness || isLoadingServices) {
-        return <BusinessPublicPageSkeleton />;
+    const isLoading = isLoadingBusiness || isLoadingServices;
+    
+    if (!isLoading && (!business || businessError)) {
+        notFound();
     }
 
-    if (!business || businessError) {
-        notFound();
+    if (isLoading) {
+        return <BusinessPublicPageSkeleton />;
     }
     
     const formatPrice = (price: number) => {
@@ -156,7 +158,7 @@ export default function BusinessPublicPage() {
                                 </CardFooter>
                             </Card>
                         ))}
-                         {services?.length === 0 && (
+                         {services?.length === 0 && !isLoadingServices && (
                             <p className="col-span-full text-center text-muted-foreground">Nenhum serviço disponível no momento.</p>
                          )}
                      </div>
