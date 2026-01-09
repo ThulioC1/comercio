@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { useUser, useFirestore } from '@/firebase';
 import type { UserProfile } from './types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,32 +20,35 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+    async function fetchProfile() {
+      if (user && firestore) {
+        setProfileLoading(true);
+        const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUserProfile(userDoc.data() as UserProfile);
         } else {
-          // Handle case where user is in auth but not firestore, might happen on first login
-          // For now, we'll set profile to null, the login form logic should create it.
           setUserProfile(null);
         }
+        setProfileLoading(false);
       } else {
-        setUser(null);
         setUserProfile(null);
+        setProfileLoading(false);
       }
-      setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
-  }, []);
+    if (!isUserLoading) {
+      fetchProfile();
+    }
+  }, [user, isUserLoading, firestore]);
+
+  const loading = isUserLoading || profileLoading;
 
   const value = { user, userProfile, loading };
 

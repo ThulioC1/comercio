@@ -14,8 +14,8 @@ import {
   SidebarInset
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/lib/auth";
-import { auth } from '@/lib/firebase';
+import { useAuth as useAppAuth } from "@/lib/auth";
+import { useAuth } from "@/firebase";
 import { Home, Settings, Calendar, Users, LogOut, Scissors } from 'lucide-react';
 
 const menuItems = [
@@ -27,7 +27,8 @@ const menuItems = [
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, userProfile } = useAuth();
+  const { userProfile } = useAppAuth();
+  const auth = useAuth();
   const pathname = usePathname();
 
   const getInitials = (name?: string | null) => {

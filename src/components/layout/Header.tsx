@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { LogIn, LogOut, LayoutDashboard, User as UserIcon, Scissors } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { auth } from '@/lib/firebase';
+import { useAuth as useAppAuth } from '@/lib/auth';
+import { useAuth } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function Header() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAppAuth();
+  const auth = useAuth();
 
   const handleSignOut = async () => {
     await auth.signOut();

@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +47,8 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,7 +67,7 @@ export default function RegisterForm() {
             photoURL: user.photoURL,
             role: 'client', // Default role
         };
-        const userDocRef = doc(db, "users", user.uid);
+        const userDocRef = doc(firestore, "users", user.uid);
         setDoc(userDocRef, userProfile).catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
               path: userDocRef.path,
@@ -90,7 +92,7 @@ export default function RegisterForm() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(firestore, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       if (!userDoc.exists()) {
         const userProfile: UserProfile = {
