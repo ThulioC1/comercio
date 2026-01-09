@@ -6,14 +6,15 @@ import { getAuth } from 'firebase/auth';
 
 // This is a server-only file.
 
+function createFirebaseApp() {
+    if (getApps().length > 0) {
+        return getApp();
+    }
+    return initializeApp(firebaseConfig);
+}
+
 export function initializeFirebase() {
-  if (!getApps().length) {
-    // In server components, especially in non-Firebase hosting environments (like Vercel),
-    // we must explicitly provide the configuration.
-    initializeApp(firebaseConfig);
-  }
-  // If already initialized, just get the existing app instance.
-  const app = getApp();
+  const app = createFirebaseApp();
   return getSdks(app);
 }
 
@@ -24,3 +25,4 @@ function getSdks(firebaseApp: FirebaseApp) {
     firestore: getFirestore(firebaseApp)
   };
 }
+
