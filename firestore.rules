@@ -30,26 +30,13 @@ service cloud.firestore {
       allow create: if isSignedIn();
     }
     
-    // Rules for 'businesses' and its subcollections
-    match /businesses/{businessId} {
-      // ANYONE can read business details for the public booking page.
+    // Rules for 'businesses' and all its subcollections
+    match /businesses/{businessId}/{document=**} {
+      // ANYONE can read business details and all sub-collection data for public booking pages.
       allow read: if true;
       
-      // Only admin or the owner can write.
+      // Only the business owner or a system admin can write to the business or its subcollections.
       allow write: if isSystemAdmin() || isBusinessOwner(businessId);
-
-      // Subcollections are publicly readable but writable only by the owner/admin.
-      match /{allSubcollections}/{docId} {
-        allow read: if true;
-        allow write: if isSystemAdmin() || isBusinessOwner(businessId);
-      }
-
-      // Specific rule for appointments: any signed-in user can create one.
-      match /appointments/{appointmentId} {
-        allow create: if isSignedIn();
-        // Read/update/delete still restricted to owner/admin
-        allow read, update, delete: if isSystemAdmin() || isBusinessOwner(businessId);
-      }
     }
   }
 }
