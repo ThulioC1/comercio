@@ -77,11 +77,6 @@ export default function BookingClient({ business, service, schedule }: BookingCl
 
         const fetchSlots = async () => {
             setLoadingSlots(true);
-            
-            const currentPath = window.location.pathname;
-            const newUrl = `${currentPath}?date=${format(date, 'yyyy-MM-dd')}`;
-            window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-
 
             const dayOfWeek = date.getDay(); // Sunday - 0, Monday - 1
             const daySchedule = schedule.find(s => s.dayIndex === dayOfWeek);
@@ -104,9 +99,11 @@ export default function BookingClient({ business, service, schedule }: BookingCl
 
     const handleSlotSelection = (slot: string) => {
         setSelectedSlot(slot);
-        const currentPath = window.location.pathname;
-        const newUrl = `${currentPath}?date=${format(date!, 'yyyy-MM-dd')}&slot=${slot}`;
-        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+        if (date) {
+            const currentPath = window.location.pathname;
+            const newUrl = `${currentPath}?date=${format(date, 'yyyy-MM-dd')}&slot=${slot}`;
+            window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+        }
     }
 
     const formatPrice = (price?: number) => {
@@ -290,5 +287,4 @@ export default function BookingClient({ business, service, schedule }: BookingCl
             </AlertDialog>
         </div>
     );
-
     
