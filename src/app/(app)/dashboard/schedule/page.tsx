@@ -14,10 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarClock } from 'lucide-react';
+import { Loader2, CalendarClock, CalendarCheck } from 'lucide-react';
 import type { Schedule as ScheduleType } from '@/lib/types';
 import { useMemoFirebase } from '@/firebase/provider';
 import { Skeleton } from '@/components/ui/skeleton';
+import TodayAppointmentsList from '@/components/dashboard/TodayAppointmentsList';
 
 const daySchema = z.object({
   id: z.string(),
@@ -123,6 +124,16 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col gap-6">
+       <Card>
+          <CardHeader>
+             <CardTitle className="font-headline flex items-center gap-2"><CalendarCheck/> Agendamentos de Hoje</CardTitle>
+             <CardDescription>Veja os agendamentos confirmados para hoje.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TodayAppointmentsList />
+          </CardContent>
+       </Card>
+
        <Card>
           <CardHeader>
              <CardTitle className="font-headline flex items-center gap-2"><CalendarClock/> Horário de Funcionamento</CardTitle>
