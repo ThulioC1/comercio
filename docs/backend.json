@@ -1,0 +1,526 @@
+{
+  "entities": {
+    "SystemAdmin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SystemAdmin",
+      "type": "object",
+      "description": "Represents a system administrator user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the system administrator."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the system administrator.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the system administrator."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the system administrator account is active."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "isActive"
+      ]
+    },
+    "Business": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Business",
+      "type": "object",
+      "description": "Represents a business or establishment in the system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the business."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to the BusinessOwner. (Relationship: BusinessOwner 1:N Business)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the business."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL of the business logo.",
+          "format": "uri"
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "Theme color of the business (e.g., hex code)."
+        },
+        "businessType": {
+          "type": "string",
+          "description": "Type of business (e.g., 'barber shop', 'nail salon')."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the business is active."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the business."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the business."
+        },
+        "socialMediaLinks": {
+          "type": "array",
+          "description": "Links to the business's social media profiles.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeZone": {
+          "type": "string",
+          "description": "Time zone of the business."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "businessType",
+        "isActive",
+        "address",
+        "timeZone"
+      ]
+    },
+    "BusinessOwner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BusinessOwner",
+      "type": "object",
+      "description": "Represents a business owner user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the business owner."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the business owner.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the business owner."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the business owner account is active."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "isActive"
+      ]
+    },
+    "ServiceClient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ServiceClient",
+      "type": "object",
+      "description": "Represents an end client user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the service client."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the service client.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the service client."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the service client."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "phone"
+      ]
+    },
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a service offered by a business.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the service."
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Reference to Business. (Relationship: Business 1:N Service)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the service."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the service."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the service."
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Duration of the service in minutes."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "name",
+        "price",
+        "durationMinutes"
+      ]
+    },
+    "Schedule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Schedule",
+      "type": "object",
+      "description": "Represents the availability schedule for a business on a specific day.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the schedule."
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Reference to Business. (Relationship: Business 1:N Schedule)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date for which the schedule is defined.",
+          "format": "date-time"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the business's operating hours on this date."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the business's operating hours on this date."
+        },
+        "isClosed": {
+          "type": "boolean",
+          "description": "Indicates whether the business is closed on this date."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "date",
+        "startTime",
+        "endTime",
+        "isClosed"
+      ]
+    },
+    "Appointment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Appointment",
+      "type": "object",
+      "description": "Represents a scheduled appointment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the appointment."
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Reference to Business. (Relationship: Business 1:N Appointment)"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to ServiceClient. (Relationship: ServiceClient 1:N Appointment)"
+        },
+        "serviceId": {
+          "type": "string",
+          "description": "Reference to Service. (Relationship: Service 1:N Appointment)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the appointment."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the appointment."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the appointment (e.g., 'scheduled', 'confirmed', 'cancelled')."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any notes or additional information about the appointment."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "clientId",
+        "serviceId",
+        "startTime",
+        "endTime",
+        "status"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification sent to a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the notification."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to ServiceClient. (Relationship: ServiceClient 1:N Notification)"
+        },
+        "appointmentId": {
+          "type": "string",
+          "description": "Reference to Appointment. (Relationship: Appointment 1:N Notification)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of notification (e.g., 'confirmation', 'reminder', 'cancellation')."
+        },
+        "message": {
+          "type": "string",
+          "description": "Content of the notification message."
+        },
+        "sentAt": {
+          "type": "string",
+          "description": "Timestamp when the notification was sent.",
+          "format": "date-time"
+        },
+        "sentVia": {
+          "type": "string",
+          "description": "Channel used to send the notification (e.g., 'WhatsApp')."
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "appointmentId",
+        "type",
+        "message",
+        "sentAt",
+        "sentVia"
+      ]
+    },
+    "Setting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Setting",
+      "type": "object",
+      "description": "Represents a setting for a business.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the setting."
+        },
+        "businessId": {
+          "type": "string",
+          "description": "Reference to Business. (Relationship: Business 1:N Setting)"
+        },
+        "settingKey": {
+          "type": "string",
+          "description": "Key of the setting."
+        },
+        "settingValue": {
+          "type": "string",
+          "description": "Value of the setting."
+        }
+      },
+      "required": [
+        "id",
+        "businessId",
+        "settingKey",
+        "settingValue"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "SystemAdmin",
+          "schema": {
+            "$ref": "#/backend/entities/SystemAdmin"
+          },
+          "description": "Collection to store system administrator roles. Document existence grants admin privileges. Prevents listing all admins.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the system administrator."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "ServiceClient",
+          "schema": {
+            "$ref": "#/backend/entities/ServiceClient"
+          },
+          "description": "Collection to store service client user profiles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the service client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/businesses/{businessId}",
+        "definition": {
+          "entityName": "Business",
+          "schema": {
+            "$ref": "#/backend/entities/Business"
+          },
+          "description": "Collection to store business profiles. Includes 'ownerId' for authorization.",
+          "params": [
+            {
+              "name": "businessId",
+              "description": "Unique identifier for the business."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/businesses/{businessId}/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          },
+          "description": "Subcollection to store services offered by a business. Includes denormalized 'businessId' for authorization.",
+          "params": [
+            {
+              "name": "businessId",
+              "description": "Unique identifier for the business."
+            },
+            {
+              "name": "serviceId",
+              "description": "Unique identifier for the service."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/businesses/{businessId}/schedules/{scheduleId}",
+        "definition": {
+          "entityName": "Schedule",
+          "schema": {
+            "$ref": "#/backend/entities/Schedule"
+          },
+          "description": "Subcollection to store schedules for a business. Includes denormalized 'businessId' for authorization.",
+          "params": [
+            {
+              "name": "businessId",
+              "description": "Unique identifier for the business."
+            },
+            {
+              "name": "scheduleId",
+              "description": "Unique identifier for the schedule."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/businesses/{businessId}/appointments/{appointmentId}",
+        "definition": {
+          "entityName": "Appointment",
+          "schema": {
+            "$ref": "#/backend/entities/Appointment"
+          },
+          "description": "Subcollection to store appointments for a business. Includes denormalized 'businessId' for authorization.",
+          "params": [
+            {
+              "name": "businessId",
+              "description": "Unique identifier for the business."
+            },
+            {
+              "name": "appointmentId",
+              "description": "Unique identifier for the appointment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{clientId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Subcollection to store notifications for a client. Enables path-based ownership for clients to access only their notifications.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "Unique identifier for the client (user ID)."
+            },
+            {
+              "name": "notificationId",
+              "description": "Unique identifier for the notification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/businesses/{businessId}/settings/{settingId}",
+        "definition": {
+          "entityName": "Setting",
+          "schema": {
+            "$ref": "#/backend/entities/Setting"
+          },
+          "description": "Subcollection to store settings for a business. Includes denormalized 'businessId' for authorization.",
+          "params": [
+            {
+              "name": "businessId",
+              "description": "Unique identifier for the business."
+            },
+            {
+              "name": "settingId",
+              "description": "Unique identifier for the setting."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support a multi-tenant appointment scheduling application with distinct user roles (System Admin, Business Owner, and Service Client). It prioritizes authorization independence, clarity, and scalability. Authorization Independence is achieved through denormalization of business ownership within the `businesses/{businessId}` and related subcollections, eliminating the need for `get()` calls in security rules. QAPs (Rules are not Filters) is supported through structural segregation, with private data separated into user-specific subcollections and collaborative data utilizing membership maps.\n\n*   **System Admins**: Managed through a dedicated collection `/roles_admin/{uid}` based on their `uid`, ensuring simple existence-based authorization. The structure is designed to prevent listing all system admins.\n*   **Business Owners**: Each business is stored under `/businesses/{businessId}`. Access control is managed by the `ownerId` field within the business document, which links to the `BusinessOwner`.\n*   **Service Clients**: Represented via `users/{userId}`. This enables path-based ownership of their data.\n*   **Data Relationships**: One-to-many relationships between entities are implemented through subcollections. For instance, a `Business` has many `Services`, `Schedules`, `Appointments`, and `Settings` stored in subcollections named `services`, `schedules`, `appointments`, and `settings` respectively.\n*   **Denormalization**: The `businessId` is denormalized in all subcollections associated with a business to ensure that security rules can be applied at the subcollection level without needing to fetch the parent `Business` document. Likewise, appointment `clientId` is available on notifications for similar reasons.\n*   **Collaborative Access**: Membership maps are used sparingly, primarily at the business level if collaboration between business owners is required. If a business has multiple owners or managers, a `members` map can be added to `/businesses/{businessId}`.\n*   **Notifications**: Stored under `/users/{userId}/notifications/{notificationId}`, enabling the clients to manage and access only their notifications.\n*   **Authentication**: Relies on Firebase Authentication, and user roles are managed directly within Firestore documents. Custom claims are avoided in favor of DBAC (Database Authentication and Authorization).\n\nThis structure promotes clear, secure, and easily maintainable Firestore security rules, aligning with the core design principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs."
+  }
+}

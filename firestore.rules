@@ -1,0 +1,228 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * Core Philosophy: This ruleset secures a multi-tenant appointment scheduling application.
+     * It defines three primary roles: System Administrators, Business Owners, and Service Clients.
+     * The security model is based on document ownership and path-based access control,
+     * prioritizing clear, performant, and secure data access.
+     *
+     * Data Structure: The data is organized into top-level collections for `businesses`
+     * and `users`. A special `roles_admin` collection manages system administrators by document
+     * existence. Business-specific data (like services, schedules, and appointments) is
+     * logically nested in subcollections under `/businesses/{businessId}`. User-specific data
+     * (like notifications) is nested under `/users/{userId}`.
+     *
+     * Key Security Decisions:
+     * - System Admin: A user is an admin if a document with their UID exists in `/roles_admin`.
+     *   This collection is not listable to prevent enumerating administrators.
+     * - Business Ownership: Access to a business and its subcollections is controlled by an `ownerId`
+     *   field on the `/businesses/{businessId}` document. This requires a `get()` call to check
+     *   permissions on subcollection documents, which is a standard and necessary pattern.
+     * - Client Data Privacy: A user (Service Client) can only access data under their own
+     *   user document path, such as `/users/{userId}` and `/users/{userId}/notifications`. User
+     *   profiles are private, and user listing is disabled.
+     * - Public vs. Private Business Data: Core business information (`businesses`, `services`, `schedules`)
+     *   is publicly readable to allow clients to browse offerings. Sensitive data like `settings`
+     *   and `appointments` is restricted.
+     *
+     * Denormalization for Authorization: The `ownerId` is stored on each `Business` document,
+     * allowing for a single lookup to authorize actions on the business and all its subcollections.
+     * Relational integrity fields like `businessId` and `clientId` are required on documents to
+     * enforce consistent relationships and enable authorization checks.
+     *
+     * Structural Segregation: Private user data (profiles, notifications) is stored in the `/users`
+     * collection tree, completely separate from the public/semi-public `/businesses` collection tree.
+     * This provides strong security boundaries.
+     */
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing user-specific data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Returns true if the document being accessed already exists in Firestore.
+     * CRITICAL: Must be used for all update and delete operations.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Returns true if the user is a system administrator.
+     * Admin status is granted by the existence of a document in the roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Returns true if the user is the owner of the specified business.
+     * Performs a single `get` operation to check the ownerId on the parent business document.
+     * Note: This function call counts as one read operation.
+     */
+    function isBusinessOwner(businessId) {
+      let businessDoc = get(/databases/$(database)/documents/businesses/$(businessId));
+      return isSignedIn() && businessDoc.data.ownerId == request.auth.uid;
+    }
+
+    /**
+     * Validates that an incoming data field matches a value from the path.
+     * Used on create to enforce relational integrity.
+     */
+    function dataMatchesPath(key, value) {
+      return request.resource.data[key] == value;
+    }
+
+    /**
+     * Validates that a field is immutable and cannot be changed on update.
+     * Used to protect critical relational IDs like ownerId, clientId, etc.
+     */
+    function isImmutable(key) {
+      return request.resource.data[key] == resource.data[key];
+    }
+
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to System Administrator roles.
+     * @path /roles_admin/{userId}
+     * @allow (get) An admin wants to check if another user is an admin.
+     * @deny (list) Any user, including an admin, tries to list all administrators.
+     * @principle Prevents enumeration of privileged users and ensures only admins can manage roles.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Controls access to a user's (Service Client) private profile document.
+     * @path /users/{userId}
+     * @allow (create) A new user signs up and creates their own profile document. `auth.uid` must match `userId`.
+     * @deny (get) User 'A' tries to read the profile of user 'B'.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && dataMatchesPath('id', userId);
+      allow update: if isOwner(userId) && isExistingDoc() && isImmutable('id');
+      allow delete: if isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * @description Controls access to notifications, which are private to each user.
+     * @path /users/{clientId}/notifications/{notificationId}
+     * @allow (get) A client reads a notification they received.
+     * @deny (create) A client tries to create their own notification. These are system-generated.
+     * @principle Enforces path-based ownership for a user's private subcollection.
+     */
+    match /users/{clientId}/notifications/{notificationId} {
+      allow get: if isOwner(clientId);
+      allow list: if isOwner(clientId);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to public business profiles.
+     * @path /businesses/{businessId}
+     * @allow (create) An authenticated user creates a new business, setting themselves as the owner.
+     * @deny (update) A user who is not the `ownerId` tries to change the business name.
+     * @principle Enforces document ownership for writes while allowing public reads.
+     */
+    match /businesses/{businessId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isOwner(resource.data.ownerId) && isExistingDoc() && isImmutable('ownerId');
+      allow delete: if isOwner(resource.data.ownerId) && isExistingDoc();
+
+      /**
+       * @description Controls access to services, which are publicly readable.
+       * @path /businesses/{businessId}/services/{serviceId}
+       * @allow (list) Any user lists the services for a business.
+       * @deny (create) An anonymous user or a non-owner tries to add a new service.
+       * @principle Inherits ownership from the parent business document for all write operations.
+       */
+      match /services/{serviceId} {
+        allow get: if true;
+        allow list: if true;
+        allow create: if isBusinessOwner(businessId) && dataMatchesPath('businessId', businessId);
+        allow update: if isBusinessOwner(businessId) && isExistingDoc() && isImmutable('businessId');
+        allow delete: if isBusinessOwner(businessId) && isExistingDoc();
+      }
+
+      /**
+       * @description Controls access to schedules, which are publicly readable.
+       * @path /businesses/{businessId}/schedules/{scheduleId}
+       * @allow (get) A client reads a business's schedule for a specific day.
+       * @deny (update) A client tries to change a business's opening hours.
+       * @principle Inherits ownership from the parent business document for all write operations.
+       */
+      match /schedules/{scheduleId} {
+        allow get: if true;
+        allow list: if true;
+        allow create: if isBusinessOwner(businessId) && dataMatchesPath('businessId', businessId);
+        allow update: if isBusinessOwner(businessId) && isExistingDoc() && isImmutable('businessId');
+        allow delete: if isBusinessOwner(businessId) && isExistingDoc();
+      }
+
+      /**
+       * @description Controls access to business settings, which are private to the owner.
+       * @path /businesses/{businessId}/settings/{settingId}
+       * @allow (get) The business owner reads their private settings.
+       * @deny (list) A client tries to list all settings for a business.
+       * @principle Inherits ownership from the parent business document for all operations.
+       */
+      match /settings/{settingId} {
+        allow get: if isBusinessOwner(businessId);
+        allow list: if isBusinessOwner(businessId);
+        allow create: if isBusinessOwner(businessId) && dataMatchesPath('businessId', businessId);
+        allow update: if isBusinessOwner(businessId) && isExistingDoc() && isImmutable('businessId');
+        allow delete: if isBusinessOwner(businessId) && isExistingDoc();
+      }
+
+      /**
+       * @description Controls access to appointments.
+       * @path /businesses/{businessId}/appointments/{appointmentId}
+       * @allow (create) A client creates an appointment for themselves.
+       * @deny (list) A client tries to list all appointments for a business.
+       * @principle Shared access model: The business owner can manage all appointments, while a client
+       * can only create appointments for themself and read their own specific appointment.
+       */
+      match /appointments/{appointmentId} {
+        allow get: if isBusinessOwner(businessId) || isOwner(resource.data.clientId);
+        allow list: if isBusinessOwner(businessId);
+        allow create: if isSignedIn() && request.resource.data.clientId == request.auth.uid && dataMatchesPath('businessId', businessId);
+        allow update: if isBusinessOwner(businessId) && isExistingDoc() && isImmutable('businessId') && isImmutable('clientId');
+        allow delete: if isBusinessOwner(businessId) && isExistingDoc();
+      }
+    }
+  }
+}
