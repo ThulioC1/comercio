@@ -287,4 +287,4 @@ export default function BookingClient({ business, service, schedule }: BookingCl
             </AlertDialog>
         </div>
     );
-    
+}
