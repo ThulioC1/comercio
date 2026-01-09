@@ -9,6 +9,7 @@ import { Clock, DollarSign, CalendarPlus, Building, MapPin, Info } from 'lucide-
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 async function getBusinessData(businessId: string) {
     const { firestore } = initializeFirebase();
@@ -103,10 +104,12 @@ export default async function BusinessPublicPage({ params }: { params: { busines
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button className="w-full">
-                                        <CalendarPlus className="mr-2"/>
-                                        Agendar Agora
-                                    </Button>
+                                    <Link href={`/book/${businessId}/service/${service.id}`} className="w-full">
+                                        <Button className="w-full">
+                                            <CalendarPlus className="mr-2"/>
+                                            Agendar Agora
+                                        </Button>
+                                    </Link>
                                 </CardFooter>
                             </Card>
                         ))}
