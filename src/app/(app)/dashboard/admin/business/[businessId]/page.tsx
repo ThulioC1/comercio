@@ -61,6 +61,12 @@ export default function AdminBusinessDetailsPage() {
                 ) : (
                      <p>Negócio não encontrado.</p>
                 )}
+                 <Link href={`/dashboard/admin/business/${businessId}/edit`}>
+                    <Button variant="outline">
+                        <Edit className="mr-2" />
+                        Editar Negócio
+                    </Button>
+                </Link>
             </div>
 
             <Card>
@@ -107,7 +113,7 @@ export default function AdminBusinessDetailsPage() {
                             {!isLoadingServices && services?.map((service) => (
                                 <TableRow key={service.id}>
                                     <TableCell className="font-medium">{service.name}</TableCell>
-                                    <TableCell>{service.duration} min</TableCell>
+                                    <TableCell>{service.durationMinutes} min</TableCell>
                                     <TableCell className="text-right">{formatPrice(service.price)}</TableCell>
                                 </TableRow>
                             ))}

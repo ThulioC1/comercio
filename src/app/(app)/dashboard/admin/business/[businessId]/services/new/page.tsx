@@ -20,7 +20,7 @@ const formSchema = z.object({
   name: z.string().min(2, { message: 'O nome do serviço deve ter pelo menos 2 caracteres.' }),
   description: z.string().optional(),
   price: z.coerce.number().positive({ message: 'O preço deve ser um número positivo.' }),
-  duration: z.coerce.number().int().positive({ message: 'A duração deve ser um número inteiro positivo de minutos.' }),
+  durationMinutes: z.coerce.number().int().positive({ message: 'A duração deve ser um número inteiro positivo de minutos.' }),
 });
 
 export default function NewServicePage() {
@@ -37,7 +37,7 @@ export default function NewServicePage() {
       name: '',
       description: '',
       price: 0,
-      duration: 30,
+      durationMinutes: 30,
     },
   });
 
@@ -56,7 +56,7 @@ export default function NewServicePage() {
         name: values.name,
         description: values.description || '',
         price: values.price,
-        duration: values.duration,
+        durationMinutes: values.durationMinutes,
         businessId: businessId,
         staffIds: [], // Staff can be assigned later
       };
@@ -105,7 +105,7 @@ export default function NewServicePage() {
                     />
                     <FormField
                         control={form.control}
-                        name="duration"
+                        name="durationMinutes"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Duração (em minutos)</FormLabel>

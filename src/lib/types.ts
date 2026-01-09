@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type UserRole = 'system-admin' | 'business-owner' | 'client';
@@ -38,7 +39,7 @@ export interface Service {
   name: string;
   description: string;
   price: number;
-  duration: number; // in minutes
+  durationMinutes: number; // in minutes
   staffIds: string[]; // IDs of staff who can perform this service
 }
 
@@ -55,7 +56,7 @@ export interface Schedule {
   businessId: string;
   isOpen: boolean;
   openTime: string; // e.g., '09:00'
-  closeTime: string; // e.g., '18:00'
+  closeTime: string; // eG., '18:00'
   breakTimes?: { start: string; end: string }[];
 }
 
