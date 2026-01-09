@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/lib/auth";
@@ -7,6 +8,7 @@ import AppointmentsChart from "@/components/dashboard/AppointmentsChart";
 import RecentAppointments from "@/components/dashboard/RecentAppointments";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import ClientDashboard from "@/components/dashboard/ClientDashboard";
 
 const stats = [
     { title: "Faturamento (mês)", value: "R$ 4,231.89", icon: DollarSign, change: "+20.1% from last month" },
@@ -89,6 +91,10 @@ export default function DashboardPage() {
 
   if (userProfile?.role === 'system-admin') {
     return <AdminDashboard />;
+  }
+
+  if (userProfile?.role === 'client') {
+    return <ClientDashboard />;
   }
 
   // Default to business owner dashboard
