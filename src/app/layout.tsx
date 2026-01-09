@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { AuthProvider } from '@/lib/auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'AgendaPlus',
@@ -23,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className={cn('min-h-screen bg-background font-body antialiased')}>
         <AuthProvider>
+          <FirebaseErrorListener />
           {children}
           <Toaster />
         </AuthProvider>

@@ -26,6 +26,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um email válido.' }),
@@ -63,7 +65,15 @@ export default function RegisterForm() {
             photoURL: user.photoURL,
             role: 'client', // Default role
         };
-        await setDoc(doc(db, "users", user.uid), userProfile);
+        const userDocRef = doc(db, "users", user.uid);
+        setDoc(userDocRef, userProfile).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'create',
+              requestResourceData: userProfile,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
         toast({ title: 'Conta criada com sucesso!', description: 'Você já pode usar o AgendaPlus.' });
         router.push('/dashboard');
     } catch (error) {
@@ -90,7 +100,14 @@ export default function RegisterForm() {
           photoURL: user.photoURL,
           role: 'client',
         };
-        await setDoc(userDocRef, userProfile);
+        setDoc(userDocRef, userProfile).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'create',
+              requestResourceData: userProfile,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
       }
       toast({ title: 'Login com Google bem-sucedido!' });
       router.push('/dashboard');
