@@ -1,36 +1,43 @@
 
-"use client";
-
-import { useMemo } from 'react';
-import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection, query, getDoc, getDocs } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase/server'; // Using server initialization
 import type { Business, Service } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Clock, DollarSign, CalendarPlus, Building, MapPin, Info } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { notFound } from 'next/navigation';
 
-function BusinessPublicPage() {
-    const firestore = useFirestore();
-    const params = useParams();
-    const businessId = params.businessId as string;
+async function getBusinessData(businessId: string) {
+    const { firestore } = initializeFirebase();
+    const businessRef = doc(firestore, "businesses", businessId);
+    const servicesQuery = query(collection(firestore, `businesses/${businessId}/services`));
 
-    const businessRef = useMemo(() => {
-        if (!firestore || !businessId) return null;
-        return doc(firestore, "businesses", businessId);
-    }, [firestore, businessId]);
+    const businessSnap = await getDoc(businessRef);
 
-    const servicesQuery = useMemo(() => {
-        if (!firestore || !businessId) return null;
-        return query(collection(firestore, `businesses/${businessId}/services`));
-    }, [firestore, businessId]);
+    if (!businessSnap.exists()) {
+        return null;
+    }
 
-    const { data: business, isLoading: isLoadingBusiness } = useDoc<Business>(businessRef);
-    const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesQuery);
+    const servicesSnap = await getDocs(servicesQuery);
+    const business = { id: businessSnap.id, ...businessSnap.data() } as Business;
+    const services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service));
+
+    return { business, services };
+}
+
+
+export default async function BusinessPublicPage({ params }: { params: { businessId: string } }) {
+    const businessId = params.businessId;
+    const data = await getBusinessData(businessId);
+
+    if (!data) {
+        notFound();
+    }
+    
+    const { business, services } = data;
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
@@ -45,41 +52,6 @@ function BusinessPublicPage() {
         return name.substring(0, 2).toUpperCase();
     };
 
-    if (isLoadingBusiness) {
-        return (
-            <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 container py-10">
-                   <Skeleton className="h-24 w-24 rounded-full mx-auto" />
-                   <Skeleton className="h-8 w-64 mx-auto mt-4" />
-                   <Skeleton className="h-5 w-48 mx-auto mt-2" />
-                   <div className="mt-8 space-y-4">
-                        <Skeleton className="h-20 w-full" />
-                        <Skeleton className="h-20 w-full" />
-                        <Skeleton className="h-20 w-full" />
-                   </div>
-                </main>
-                <Footer/>
-            </div>
-        )
-    }
-
-    if (!business) {
-        return (
-             <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 flex items-center justify-center">
-                    <div className="text-center">
-                        <Building className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground">Negócio não encontrado</h1>
-                        <p className="mt-2 text-muted-foreground">O link que você seguiu pode estar quebrado ou o negócio pode ter sido removido.</p>
-                        <Button variant="outline" className="mt-6" onClick={() => window.history.back()}>Voltar</Button>
-                    </div>
-                </main>
-                <Footer/>
-            </div>
-        )
-    }
 
     return (
         <div className="flex flex-col min-h-screen bg-accent/20">
@@ -111,19 +83,8 @@ function BusinessPublicPage() {
                 <div className="mt-12">
                     <h2 className="font-headline text-2xl font-bold text-center mb-6">Nossos Serviços</h2>
                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {isLoadingServices && Array.from({length: 3}).map((_, i) => (
-                             <Card key={i}>
-                                <CardHeader><Skeleton className="h-5 w-4/5" /></CardHeader>
-                                <CardContent className="space-y-2">
-                                     <Skeleton className="h-4 w-1/2" />
-                                     <Skeleton className="h-4 w-1/3" />
-                                </CardContent>
-                                <CardFooter>
-                                     <Skeleton className="h-10 w-full" />
-                                </CardFooter>
-                             </Card>
-                        ))}
-                        {!isLoadingServices && services?.map((service) => (
+                        
+                        {services?.map((service) => (
                             <Card key={service.id} className="flex flex-col">
                                 <CardHeader>
                                     <CardTitle>{service.name}</CardTitle>
@@ -149,7 +110,7 @@ function BusinessPublicPage() {
                                 </CardFooter>
                             </Card>
                         ))}
-                         {!isLoadingServices && services?.length === 0 && (
+                         {services?.length === 0 && (
                             <p className="col-span-full text-center text-muted-foreground">Nenhum serviço disponível no momento.</p>
                          )}
                      </div>
@@ -159,5 +120,3 @@ function BusinessPublicPage() {
         </div>
     );
 }
-
-export default BusinessPublicPage;
