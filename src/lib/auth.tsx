@@ -29,12 +29,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function fetchProfile() {
       if (user && firestore) {
         setProfileLoading(true);
+        // Special case for system admin
+        if (user.email === 'thuliocosta8@gmail.com') {
+          setUserProfile({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || 'Admin',
+            photoURL: user.photoURL,
+            role: 'system-admin',
+          });
+          setProfileLoading(false);
+          return;
+        }
+
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           setUserProfile(userDoc.data() as UserProfile);
         } else {
-          setUserProfile(null);
+          // If no profile, create a default client profile representation
+           setUserProfile({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            role: 'client',
+          });
         }
         setProfileLoading(false);
       } else {

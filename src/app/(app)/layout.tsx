@@ -16,7 +16,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth as useAppAuth } from "@/lib/auth";
 import { useAuth } from "@/firebase";
-import { Home, Settings, Calendar, Users, LogOut, Scissors } from 'lucide-react';
+import { Home, Settings, Calendar, Users, LogOut, Scissors, Shield } from 'lucide-react';
+import type { UserRole } from '@/lib/types';
 
 const menuItems = [
   { href: '/dashboard', label: 'Início', icon: Home },
@@ -46,6 +47,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return name.substring(0, 2);
   };
 
+  const getRoleLabel = (role?: UserRole | null) => {
+    switch (role) {
+      case 'system-admin':
+        return 'Administrador';
+      case 'business-owner':
+        return 'Empreendedor';
+      case 'client':
+        return 'Cliente';
+      default:
+        return 'Usuário';
+    }
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -60,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   {userProfile?.displayName ?? "Usuário"}
                 </span>
                 <span className="text-xs text-sidebar-foreground/70">
-                  {userProfile?.role === 'business-owner' ? 'Empreendedor' : 'Cliente'}
+                  {getRoleLabel(userProfile?.role)}
                 </span>
             </div>
           </div>
