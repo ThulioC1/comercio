@@ -67,7 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   const menuItems = userProfile?.role === 'system-admin' ? adminMenuItems : businessOwnerMenuItems;
-  const pageTitle = menuItems.find(item => item.href === pathname)?.label || 'Dashboard';
+  const pageTitle = menuItems.find(item => pathname.startsWith(item.href) && (item.href.length > 1 ? pathname !== '/dashboard' : true))?.label || 'Dashboard';
 
 
   return (
