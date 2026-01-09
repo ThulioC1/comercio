@@ -2,16 +2,29 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import type { Business, Service, Schedule } from '@/lib/types';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/auth';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import type { Business, Service, Schedule, Appointment } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Clock, DollarSign, Loader2, ArrowLeft } from 'lucide-react';
-import { add, format, parse, startOfDay } from 'date-fns';
+import { Clock, DollarSign, Loader2, ArrowLeft, CalendarPlus, UserCheck } from 'lucide-react';
+import { add, format, parse, startOfDay, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 
 interface BookingClientProps {
@@ -22,13 +35,27 @@ interface BookingClientProps {
 
 export default function BookingClient({ business, service, schedule }: BookingClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
+    const { user, loading: userLoading } = useAuth();
+    const firestore = useFirestore();
 
-    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [date, setDate] = useState<Date | undefined>(() => {
+        const dateParam = searchParams.get('date');
+        if (dateParam) {
+            const parsedDate = new Date(dateParam);
+            if (isValid(parsedDate)) {
+                return parsedDate;
+            }
+        }
+        return new Date();
+    });
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-    const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+    const [selectedSlot, setSelectedSlot] = useState<string | null>(searchParams.get('slot'));
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+
 
     const generateTimeSlots = (start: string, end: string, duration: number) => {
         const slots = [];
@@ -50,7 +77,12 @@ export default function BookingClient({ business, service, schedule }: BookingCl
 
         const fetchSlots = async () => {
             setLoadingSlots(true);
-            setSelectedSlot(null);
+            
+            const currentPath = window.location.pathname;
+            const newUrl = `${currentPath}?date=${format(date, 'yyyy-MM-dd')}`;
+            window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+
+
             const dayOfWeek = date.getDay(); // Sunday - 0, Monday - 1
             const daySchedule = schedule.find(s => s.dayIndex === dayOfWeek);
 
@@ -70,34 +102,82 @@ export default function BookingClient({ business, service, schedule }: BookingCl
 
     }, [date, service, schedule]);
 
+    const handleSlotSelection = (slot: string) => {
+        setSelectedSlot(slot);
+        const currentPath = window.location.pathname;
+        const newUrl = `${currentPath}?date=${format(date!, 'yyyy-MM-dd')}&slot=${slot}`;
+        window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+    }
+
     const formatPrice = (price?: number) => {
         if (price === undefined) return 'N/A';
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
     }
     
-    const handleConfirmBooking = () => {
-        // Here you would typically handle the booking submission,
-        // which might involve checking for user authentication and then
-        // creating an appointment document in Firestore.
-        // For now, we'll just show a success message.
+    const handleBooking = async () => {
         setIsSubmitting(true);
-        toast({
-            title: "Agendamento quase lá!",
-            description: "Para confirmar, você precisa fazer login ou criar uma conta."
-        });
-        // In a real scenario, you'd likely redirect to a login/register page
-        // with the booking details to be finalized after auth.
-        // e.g., router.push(`/login?redirect=/book/${business.id}/confirm&...details`);
-        setTimeout(() => {
-             router.push('/login');
-        }, 2000)
+
+        if (!user) {
+            toast({
+                title: "Login necessário",
+                description: "Você precisa fazer login para confirmar o agendamento. Estamos te redirecionando!",
+            });
+            const redirectPath = window.location.pathname + window.location.search;
+            router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+            return;
+        }
+
+        if (!firestore || !date || !selectedSlot) {
+            toast({ variant: 'destructive', title: 'Erro', description: 'Informações de agendamento incompletas.' });
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            const [hours, minutes] = selectedSlot.split(':').map(Number);
+            const startTime = new Date(date);
+            startTime.setHours(hours, minutes);
+
+            const endTime = add(startTime, { minutes: service.durationMinutes });
+
+            const newAppointment: Omit<Appointment, 'id'> = {
+                businessId: business.id,
+                clientId: user.uid,
+                clientName: user.displayName || 'Nome não informado',
+                clientPhone: user.phoneNumber || 'Telefone não informado',
+                serviceId: service.id,
+                staffId: 'any', // Placeholder for staff selection logic
+                startTime: Timestamp.fromDate(startTime),
+                endTime: Timestamp.fromDate(endTime),
+                status: 'confirmed',
+            };
+            
+            await addDoc(collection(firestore, `businesses/${business.id}/appointments`), newAppointment);
+
+            setShowConfirmation(true);
+
+
+        } catch (error) {
+             console.error("Error creating appointment: ", error);
+             toast({ variant: 'destructive', title: 'Erro ao agendar', description: 'Não foi possível criar o agendamento. Tente novamente.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    if (userLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
     }
 
     return (
         <div>
-            <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+            <Button variant="outline" size="sm" onClick={() => router.push(`/book/${business.id}`)} className="mb-6">
                 <ArrowLeft className="mr-2" />
-                Voltar
+                Voltar para os serviços
             </Button>
             <div className="grid md:grid-cols-3 gap-8">
                  <div className="md:col-span-2">
@@ -110,7 +190,7 @@ export default function BookingClient({ business, service, schedule }: BookingCl
                             <Calendar
                                 mode="single"
                                 selected={date}
-                                onSelect={setDate}
+                                onSelect={(d) => { setDate(d); setSelectedSlot(null); }}
                                 disabled={(day) => day < startOfDay(new Date())}
                                 className="rounded-md border p-0 mx-auto"
                                 locale={ptBR}
@@ -129,7 +209,7 @@ export default function BookingClient({ business, service, schedule }: BookingCl
                                         <Button 
                                             key={slot} 
                                             variant={selectedSlot === slot ? 'default' : 'outline'}
-                                            onClick={() => setSelectedSlot(slot)}
+                                            onClick={() => handleSlotSelection(slot)}
                                         >
                                             {slot}
                                         </Button>
@@ -183,17 +263,32 @@ export default function BookingClient({ business, service, schedule }: BookingCl
                         <div className="p-6 pt-0">
                             <Button 
                                 className="w-full" 
-                                disabled={!selectedSlot || !date || isSubmitting}
-                                onClick={handleConfirmBooking}
+                                disabled={!selectedSlot || !date || isSubmitting || userLoading}
+                                onClick={handleBooking}
                             >
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Confirmar Agendamento
+                                {user ? <><CalendarPlus className="mr-2"/>Confirmar Agendamento</> : <><UserCheck className="mr-2"/>Fazer Login para Agendar</>}
                             </Button>
                         </div>
                     </Card>
                  </div>
             </div>
+
+             <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle className="font-headline text-2xl text-center">Agendamento Confirmado!</AlertDialogTitle>
+                    <AlertDialogDescription className="text-center">
+                        Seu horário para {service.name} em {format(date || new Date(), "dd 'de' MMMM", { locale: ptBR })} às {selectedSlot} foi agendado com sucesso.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center">
+                    <AlertDialogAction onClick={() => router.push('/dashboard')}>Ver Meus Agendamentos</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => router.push(`/book/${business.id}`)}>Agendar Outro Serviço</AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
-}
 
+    

@@ -11,7 +11,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -46,21 +46,29 @@ const GoogleIcon = () => (
 export default function AuthForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
+
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '' },
   });
 
+  const handleAuthSuccess = () => {
+    toast({ title: "Login bem-sucedido!", description: "Redirecionando..." });
+    router.push(redirectUrl);
+  };
+
   const handleAuth = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
         await signInWithEmailAndPassword(auth, values.email, values.password);
-        toast({ title: "Login bem-sucedido!", description: "Redirecionando para o seu painel." });
-        router.push('/dashboard');
+        handleAuthSuccess();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Erro de Login', description: 'Email ou senha incorretos.' });
     } finally {
@@ -95,8 +103,7 @@ export default function AuthForm() {
         });
 
       }
-      toast({ title: 'Login com Google bem-sucedido!' });
-      router.push('/dashboard');
+      handleAuthSuccess();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Erro com Google', description: 'Não foi possível fazer login com o Google.' });
     } finally {
@@ -157,3 +164,5 @@ export default function AuthForm() {
     </div>
   );
 }
+
+    

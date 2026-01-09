@@ -1,8 +1,10 @@
+
 import Link from 'next/link';
 import { Scissors } from 'lucide-react';
 import AuthForm from '@/components/auth/AuthForm';
+import { Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginPageContent() {
   return (
     <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
@@ -49,3 +51,13 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <LoginPageContent />
+        </Suspense>
+    )
+}
+
+    
