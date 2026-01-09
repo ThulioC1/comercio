@@ -33,6 +33,19 @@ interface BookingClientProps {
     schedule: Schedule[];
 }
 
+const generateTimeSlots = (start: string, end: string, duration: number) => {
+    const slots = [];
+    let currentTime = parse(start, 'HH:mm', new Date());
+    const endTime = parse(end, 'HH:mm', new Date());
+
+    while (currentTime < endTime) {
+        slots.push(format(currentTime, 'HH:mm'));
+        currentTime = add(currentTime, { minutes: duration });
+    }
+    return slots;
+};
+
+
 export default function BookingClient({ business, service, schedule }: BookingClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -55,19 +68,6 @@ export default function BookingClient({ business, service, schedule }: BookingCl
     const [loadingSlots, setLoadingSlots] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
-
-
-    const generateTimeSlots = (start: string, end: string, duration: number) => {
-        const slots = [];
-        let currentTime = parse(start, 'HH:mm', new Date());
-        const endTime = parse(end, 'HH:mm', new Date());
-
-        while (currentTime < endTime) {
-            slots.push(format(currentTime, 'HH:mm'));
-            currentTime = add(currentTime, { minutes: duration });
-        }
-        return slots;
-    };
     
     useEffect(() => {
         if (!date || !service || !schedule) {
